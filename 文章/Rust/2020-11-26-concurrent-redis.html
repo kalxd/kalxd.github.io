@@ -137,7 +137,7 @@
 <p>一个扣费请求可以如下表述：</p>
 <ol type="1">
 <li>发起扣费请求。</li>
-<li>请求加琐。</li>
+<li>请求加锁。</li>
 <li>请求失败，重试步骤2。</li>
 <li>请求成功，获取余额，计算并保存。</li>
 <li>释放锁。</li>
@@ -146,8 +146,8 @@
 <figure>
 <img src="../../image/扣费加锁流程.jpg" alt="扣费加锁流程" /><figcaption>扣费加锁流程</figcaption>
 </figure>
-<p>多个扣费请求一同发起，也会因为无法获得锁而处于等待的状态，只有上个任务完成、释放出锁，才能进行下一步。我们好像实现了一个分布式Mutex琐。</p>
-<p>接下来我们为<code>RClient</code>实现加琐、解锁方法：</p>
+<p>多个扣费请求一同发起，也会因为无法获得锁而处于等待的状态，只有上个任务完成、释放出锁，才能进行下一步。我们好像实现了一个分布式Mutex锁。</p>
+<p>接下来我们为<code>RClient</code>实现加锁、解锁方法：</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">impl</span> RClient <span class="op">{</span></a>
 <a class="sourceLine" id="cb4-2" title="2">    async <span class="kw">fn</span> try_lock(&amp;<span class="kw">self</span>) -&gt; RedisResult&lt;()&gt; <span class="op">{</span></a>
 <a class="sourceLine" id="cb4-3" title="3">        <span class="kw">let</span> <span class="kw">mut</span> conn = <span class="kw">self</span>.client.get_async_connection().await?;</a>
@@ -183,7 +183,7 @@
 <a class="sourceLine" id="cb5-11" title="11">            async <span class="kw">move</span> <span class="op">{</span></a>
 <a class="sourceLine" id="cb5-12" title="12">                <span class="pp">println!</span>(<span class="st">&quot;第{:?}任务&quot;</span>, n);</a>
 <a class="sourceLine" id="cb5-13" title="13"></a>
-<a class="sourceLine" id="cb5-14" title="14">                <span class="co">// 加琐。</span></a>
+<a class="sourceLine" id="cb5-14" title="14">                <span class="co">// 加锁。</span></a>
 <a class="sourceLine" id="cb5-15" title="15">                client.try_lock().await.unwrap();</a>
 <a class="sourceLine" id="cb5-16" title="16">                <span class="kw">let</span> money = client.get_money().await.unwrap();</a>
 <a class="sourceLine" id="cb5-17" title="17">                <span class="pp">println!</span>(<span class="st">&quot;{:?}&quot;</span>, money);</a>
@@ -226,7 +226,7 @@
 </div>
 </div>
 <p>代码与最开始一版并不多，但这里已经能正确用户余额了，最后也得到了正确结果。</p>
-<h2 id="超时琐">超时琐</h2>
+<h2 id="超时锁">超时锁</h2>
 <p>我们已经实现了一个简易锁，正常情况下用起来十分不错，结果也都正确。但再仔细观察观察，容易发现一个问题，如果一个请求占据了这个锁，运行中途突然中断（也可能任务中断，也可以有出现异常），导致锁一直无法释放。后面所有请求都会尝试获取一个永远得不到的锁，也就是出现了死锁。这样的情况是不能出现的，为此，我们在加锁时，需要为锁添加一个超时时间，避免占用时间无限导致死锁。</p>
 <p>为了简化，默认超时时间都为<strong>一秒</strong>。我们只需要简单改改加锁方法即可：</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb7-1" title="1">async <span class="kw">fn</span> try_lock(&amp;<span class="kw">self</span>) -&gt; RedisResult&lt;()&gt; <span class="op">{</span></a>
