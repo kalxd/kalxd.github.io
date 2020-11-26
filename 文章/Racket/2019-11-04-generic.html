@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+	<meta charset="UTF-8">
+	<title>racket/generic，另一种泛型</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../../css/aono.css">
+	<link rel="stylesheet" href="../../css/code.css">
+	<link rel="shortcut icon" type="image/x-icon" href="../../image/favicon.ico">
+</head>
+<body>
+	<main class="aono main container">
+		<header class="aono site header">
+			我的网站
+			
+		</header>
+		<nav class="aono navi menu">
+			<ul>
+				<li class="item"><a href="../../index.html">首页</a></li>
+				<li class="item"><a href="../../猫.html">分类</a></li>
+				<li class="item"><a href="../../标签.html">标签</a></li>
+			</ul>
+
+			<a href="../../atom.xml" class="right item">订阅</a>
+		</nav>
+
+		<div class="aono segment">
+			<article class="aono article">
+    <section>
+		<header class="header">
+			<h1>
+				racket/generic，另一种泛型
+				<small class="post date">
+					-
+					<time datetime="2019-11-04">2019年11月04日</time>
+				</small>
+			</h1>
+		</header>
+		<header class="cat">
+			标签：<a href="../../%E6%A0%87%E7%AD%BE/json.html">json</a>, <a href="../../%E6%A0%87%E7%AD%BE/generic.html">generic</a>, <a href="../../%E6%A0%87%E7%AD%BE/racket.html">racket</a>
+		</header>
+		<hr>
+        <h2 id="racketgeneric">racket/generic</h2>
+<p><code>racket/generic</code>不在racket中，需要单独引入。它为每个类型提供相同方法，有点类似于接口。</p>
+<p>为了简单说明使用方式，我们可以用它实现<code>ToJSON</code>。所谓<code>ToJSON</code>，就是定义一个<code>(-&gt;json)</code>函数，允许满足<code>ToJSON</code>类型的数据调用。</p>
+<h2 id="define-generics定义接口">define-generics定义接口</h2>
+<p>定义出这个方法：</p>
+<pre class="racket"><code>(define-generics ToJSON
+  (-&gt;json ToJSON)</code></pre>
+<p>然后得到一个接口<code>gen:ToJSON</code>，一个函数方法<code>-&gt;json</code>，一个约束组合<code>ToJSON/c</code>，及<code>ToJSON?</code>检查函数。</p>
+<h2 id="绑定到自定义struct">绑定到自定义struct</h2>
+<p>我们先定义一个struct：</p>
+<pre class="racket"><code>(struct person [id name])
+
+;;; 再定义一个用例，方便测试。
+(define me (person 1 &quot;haoren&quot;))</code></pre>
+<p>我们这样是无法直接使用<code>-&gt;json</code>的，用过rust、haskell的人都知道，我们需要把接口与定义的类型组合起来，struct提供了<code>#:methods</code>参数，一个struct可以拥有多个<code>#:methods</code>。</p>
+<p>改造一下person：</p>
+<pre class="racket"><code>(struct person [id name]
+  #:methods gen:ToJSON
+  [(define (-&gt;json self)
+	 (let ([o (make-hash `((id . ,(person-id self))
+						   (name . ,(person-name self))))])
+	   (jsexpr-&gt;string o)))])</code></pre>
+<p>运行看看：</p>
+<pre class="racket"><code>(-&gt;json me)
+&quot;{\&quot;name\&quot;:\&quot;haoren\&quot;,\&quot;id\&quot;:1}&quot;</code></pre>
+<h2 id="defaults绑定已存在类型">defaults，绑定已存在类型</h2>
+<p>按理来说，<code>-&gt;json</code>也应该适用于像<code>number?</code>，<code>string?</code>这样的数据，我们再试它一试。</p>
+<pre class="racket"><code>(-&gt;json &quot;sb&quot;)
+; -&gt;json: not implemented for &quot;sb&quot;
+
+(-&gt;json 1)
+; -&gt;json: not implemented for 1</code></pre>
+<p>不像话！新定义的struct可行，为何这几个基本类型就不行？！ 刚好<code>define-generics</code>提供<code>#:defaults</code>参数，<code>#:defaults</code>可以接受多组定义，定义的第一个是验证函数（pred?），如果满足该条件，就使用后面的定义，嗯，有点像<code>cond</code>和<code>match</code>。</p>
+<p>我们为基本类型实现<code>-&gt;json</code>。</p>
+<pre class="racket"><code>(define-generics ToJSON
+  (-&gt;json ToJSON)
+  #:defaults ([string? (define -&gt;json jsexpr-&gt;string)]
+			  [number? (define -&gt;json jsexpr-&gt;string)]
+			  [hash? (define -&gt;json jsexpr-&gt;string)]
+			  [list? (define -&gt;json jsexpr-&gt;string)]))</code></pre>
+<p>这时再试试看：</p>
+<pre class="racket"><code>(-&gt;json 1)
+&quot;1&quot;
+
+(-&gt;json &quot;helle&quot;)
+&quot;\&quot;helle\&quot;&quot;
+
+(-&gt;json '(1 2 3))
+&quot;[1,2,3]&quot;
+
+(-&gt;json me)
+&quot;{\&quot;name\&quot;:\&quot;haoren\&quot;,\&quot;id\&quot;:1}&quot;</code></pre>
+<p>功成圆满。</p>
+    </section>
+</article>
+
+		</div>
+
+		<footer class="aono footer">
+			本程序由
+			<a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+			强力驱动！
+		</footer>
+	</main>
+</body>
+</html>

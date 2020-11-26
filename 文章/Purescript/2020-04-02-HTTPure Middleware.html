@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+	<meta charset="UTF-8">
+	<title>HTTPure中间件</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../../css/aono.css">
+	<link rel="stylesheet" href="../../css/code.css">
+	<link rel="shortcut icon" type="image/x-icon" href="../../image/favicon.ico">
+</head>
+<body>
+	<main class="aono main container">
+		<header class="aono site header">
+			我的网站
+			
+		</header>
+		<nav class="aono navi menu">
+			<ul>
+				<li class="item"><a href="../../index.html">首页</a></li>
+				<li class="item"><a href="../../猫.html">分类</a></li>
+				<li class="item"><a href="../../标签.html">标签</a></li>
+			</ul>
+
+			<a href="../../atom.xml" class="right item">订阅</a>
+		</nav>
+
+		<div class="aono segment">
+			<article class="aono article">
+    <section>
+		<header class="header">
+			<h1>
+				HTTPure中间件
+				<small class="post date">
+					-
+					<time datetime="2020-04-02">2020年04月02日</time>
+				</small>
+			</h1>
+		</header>
+		<header class="cat">
+			标签：<a href="../../%E6%A0%87%E7%AD%BE/purescript.html">purescript</a>, <a href="../../%E6%A0%87%E7%AD%BE/web.html">web</a>
+		</header>
+		<hr>
+        <h1 id="httpure中间件">HTTPure中间件</h1>
+<h2 id="中间件是什么">中间件是什么？</h2>
+<p>中间件可以理解为“中间”处理过程，它有些类似于高阶函数。一个请求过来，除了正常路由处理，有时多处路由运用到同一个逻辑，我们不希望每次都 写一遍，那么可以利用中间件包裹，中间件中处理相同事件，之后决定是否要后续流程。 为了方便理解，我们从类型入手。一次正常请求，可以这样写：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">router ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">Response</span></a></code></pre></div>
+<p>一个中间件，相当于可插拔硬件，当使用上该中间件时，请求依然可以正常运行，拿走也是一样。所以我们可以写出类型：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="ot">middleware ::</span> (<span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">Response</span>) <span class="ot">-&gt;</span> (<span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">Response</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">-- 去除不必要的括号</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="ot">middleware ::</span> (<span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">Response</span>) <span class="ot">-&gt;</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">Response</span></a></code></pre></div>
+<p>很容易理解，<code>middleware</code>接受一个正常路由函数，返回一个新的路由函数，不同于<code>router</code>，<code>middleware</code>决定了要不要调用<code>router</code>。</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">logMiddleware ::</span> (<span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ResponseM</span>) <span class="ot">-&gt;</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ResponseM</span></a>
+<a class="sourceLine" id="cb3-2" title="2">logMiddleware r request <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  liftEffect <span class="fu">$</span> <span class="fu">log</span> <span class="st">&quot;before handle app&quot;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  r' <span class="ot">&lt;-</span> r request</a>
+<a class="sourceLine" id="cb3-5" title="5">  liftEffect <span class="fu">$</span> <span class="fu">log</span> <span class="st">&quot;after handle app&quot;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="fu">pure</span> r'</a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="ot">app ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ResponseM</span></a>
+<a class="sourceLine" id="cb3-9" title="9">app _ <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  liftEffect <span class="fu">$</span> <span class="fu">log</span> <span class="st">&quot;I'm app&quot;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  ok <span class="st">&quot;hello&quot;</span></a>
+<a class="sourceLine" id="cb3-12" title="12"></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="ot">main ::</span> <span class="dt">ServerM</span></a>
+<a class="sourceLine" id="cb3-14" title="14">main <span class="fu">=</span> serve <span class="dv">3000</span> (logMiddleware app) <span class="fu">$</span> <span class="fu">log</span> <span class="st">&quot;ok&quot;</span></a></code></pre></div>
+<p><code>r' &lt;- r request</code>说明我们正常调用了<code>app</code>，我们访问任意地址就能得到以下结果：</p>
+<blockquote>
+<p>before handle app I’m app after handle app</p>
+</blockquote>
+<p>我们同样可以选择不调用<code>app</code>，只要改动一下<code>logMiddleware</code>：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="ot">logMiddleware ::</span> (<span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ResponseM</span>) <span class="ot">-&gt;</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ResponseM</span></a>
+<a class="sourceLine" id="cb4-2" title="2">logMiddleware r request <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  liftEffect <span class="fu">$</span> <span class="fu">log</span> <span class="st">&quot;before handle app&quot;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  liftEffect <span class="fu">$</span> <span class="fu">log</span> <span class="st">&quot;after handle app&quot;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  ok <span class="st">&quot;hello middleware&quot;</span></a></code></pre></div>
+<p>结果：</p>
+<blockquote>
+<p>before handle app after handle app</p>
+</blockquote>
+<p><code>app</code>再无用处。</p>
+<h2 id="中间件的组合">中间件的组合</h2>
+<p>有了多个中间件，我们很自然想到组合它们。从签名来看——<code>(Request -&gt; Response) -&gt; (Request -&gt; Response)</code>——很好组合，<code>.</code>、<code>(&lt;&lt;&lt;)</code>就能搞定，需要注意的是组合方向，即调用顺序。</p>
+<h2 id="中间件transformers">中间件transformers</h2>
+<p>中间件说到底仅仅是个高阶函数，基于它，我们可以做一些常见操作，例如<code>ReaderT</code>，写大程序避免不了的部分。首先我们自定义自己的<code>ReaderT</code>：</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">type</span> <span class="dt">EnvT</span> <span class="fu">=</span> <span class="dt">ReaderT</span> <span class="dt">Int</span> <span class="dt">Aff</span></a></code></pre></div>
+<p><code>EnvT</code>环境部分就是<code>Int</code>，实际代码可以换成数据库连接池等等。<code>Aff</code>表示允许异步操作，写js避免不了。除此之外，我们又该如何表示中间件呢？</p>
+<p>从上面例子我们用到了<code>ResponseM</code>，查文档可以得到<code>type ResponseM = Aff Response</code>，<code>ResponseM</code>仅仅表示<code>Response</code>异步操作，这样就简单了，我们的<code>EnvT</code>已经包含了<code>Aff</code>，所以<code>app</code>可以这样改：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="ot">app ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">EnvT</span> <span class="dt">Response</span></a>
+<a class="sourceLine" id="cb6-2" title="2">app _ <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  s <span class="ot">&lt;-</span> asks <span class="fu">show</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  liftEffect <span class="fu">$</span> <span class="fu">log</span> s</a>
+<a class="sourceLine" id="cb6-5" title="5">  ok s</a></code></pre></div>
+<p><code>ResponseM</code>改成<code>EnvT Response</code>，原本意义没有改变，反而还多出额外属性。再回到中间件的写法，我们知道中间件第一个参数一般是<code>app</code>，返回一个新的应用（Application），所以我们可以这样写中间件：</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="ot">envMiddleware ::</span> (<span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">EnvT</span> <span class="dt">Response</span>) <span class="ot">-&gt;</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="fu">?</span></a></code></pre></div>
+<p>结果就可多了，可以继续返回<code>EnvT Response</code>，或者<code>ResponseM</code>，但前者需要一个解包的过程，需要代入依赖环境才能得到真实的<code>Response</code>，我们不妨就在此处解包：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="ot">envMiddleware ::</span> (<span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">EnvT</span> <span class="dt">Response</span>) <span class="ot">-&gt;</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ResponseM</span></a>
+<a class="sourceLine" id="cb8-2" title="2">envMiddleware r request <span class="fu">=</span> runReaderT (r request) <span class="fu">?</span>x</a></code></pre></div>
+<p>从编译器得知，<code>?x</code>的类型是<code>Int</code>，就是我们所缺的依赖环境，把它填入：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="ot">envMiddleware ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (<span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">EnvT</span> <span class="dt">Response</span>) <span class="ot">-&gt;</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ResponseM</span></a>
+<a class="sourceLine" id="cb9-2" title="2">envMiddleware x r request <span class="fu">=</span> runReaderT (r request) x</a></code></pre></div>
+<p>调用它！</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="ot">main ::</span> <span class="dt">ServerM</span></a>
+<a class="sourceLine" id="cb10-2" title="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  <span class="kw">let</span> n <span class="fu">=</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb10-4" title="4">  serve <span class="dv">3000</span> (envMiddleware n app) <span class="fu">$</span> <span class="fu">log</span> <span class="st">&quot;ok&quot;</span></a></code></pre></div>
+<p>搞了这么多，最终还是回归“中间件就是一个高阶函数”，实际上我们可以直接写：</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="ot">main ::</span> <span class="dt">ServerM</span></a>
+<a class="sourceLine" id="cb11-2" title="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-3" title="3">  <span class="kw">let</span> n <span class="fu">=</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb11-4" title="4">  serve <span class="dv">3000</span> (\request <span class="ot">-&gt;</span> runReaderT (app request) n) <span class="fu">$</span> <span class="fu">log</span> <span class="st">&quot;ok&quot;</span></a></code></pre></div>
+    </section>
+</article>
+
+		</div>
+
+		<footer class="aono footer">
+			本程序由
+			<a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+			强力驱动！
+		</footer>
+	</main>
+</body>
+</html>

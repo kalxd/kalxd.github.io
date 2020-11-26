@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+	<meta charset="UTF-8">
+	<title>Y不动点组合子流水帐</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../../css/aono.css">
+	<link rel="stylesheet" href="../../css/code.css">
+	<link rel="shortcut icon" type="image/x-icon" href="../../image/favicon.ico">
+</head>
+<body>
+	<main class="aono main container">
+		<header class="aono site header">
+			我的网站
+			
+		</header>
+		<nav class="aono navi menu">
+			<ul>
+				<li class="item"><a href="../../index.html">首页</a></li>
+				<li class="item"><a href="../../猫.html">分类</a></li>
+				<li class="item"><a href="../../标签.html">标签</a></li>
+			</ul>
+
+			<a href="../../atom.xml" class="right item">订阅</a>
+		</nav>
+
+		<div class="aono segment">
+			<article class="aono article">
+    <section>
+		<header class="header">
+			<h1>
+				Y不动点组合子流水帐
+				<small class="post date">
+					-
+					<time datetime="2020-08-05">2020年08月05日</time>
+				</small>
+			</h1>
+		</header>
+		<header class="cat">
+			标签：<a href="../../%E6%A0%87%E7%AD%BE/Racket.html">Racket</a>, <a href="../../%E6%A0%87%E7%AD%BE/%E7%A8%8B%E5%BA%8F%E8%AF%AD%E8%A8%80.html">程序语言</a>
+		</header>
+		<hr>
+        <h2 id="y组合子">Y组合子</h2>
+<blockquote>
+<p>Y组合子是 lambda 演算中的一个概念，是任意函数的不动点，在函数式编程中主要作用是<strong>提供一种匿名函数的递归方式</strong>。</p>
+</blockquote>
+<p>Y组合子表达式：</p>
+<p><br /><span class="math display"><em>λ</em><em>f</em>. (<em>λ</em><em>x</em>. <em>f</em>(<em>x</em> <em>x</em>))(<em>λ</em><em>x</em>. <em>f</em>(<em>x</em> <em>x</em>))</span><br /></p>
+<h2 id="递归匿名函数">递归匿名函数</h2>
+<p>这里有个递归版本的求和函数：</p>
+<pre class="racket"><code>(define (sum n)
+  (if (= n 0)
+      n
+      (+ n (sum (- n 1)))))
+
+(sum 10)
+; 10</code></pre>
+<p>大道至简，一目了然。<code>sum</code>内调用了自身，因为它已具名，那么匿名函数又将如何递归呢？</p>
+<h2 id="失败的尝试">失败的尝试</h2>
+<p>我们移除<code>sum</code>之后会如何？</p>
+<pre class="racket"><code>(λ (n)
+  (if (= n 0)
+      n
+      (+ n (?f (- n 1)))))</code></pre>
+<p>连函数定义都不完整了，<code>?f</code>未定义，看来这样写不行。</p>
+<h2 id="穷人的尝试">穷人的尝试</h2>
+<blockquote>
+<p>任何问题都可以通过增加一个间接层来解决。</p>
+</blockquote>
+<p>我们增加一个参数：</p>
+<pre class="racket"><code>(λ (f n)
+  (if (= n 0)
+      n
+      (+ n (f f (- n 1)))))</code></pre>
+<p>函数定义完成，<code>f</code>即自身。但如何调用呢？它连名字都没有。我们暂时赋予它一个名字，试着调用：</p>
+<pre class="racket"><code>(define P (λ (f n)
+  (if (= n 0)
+      n
+      (+ n (f f (- n 1))))))
+(P P 10)
+; 55</code></pre>
+<p>我们可以看到<code>P</code>和<code>f</code>并不关联，换句话说，<code>P</code>完全可以被替换掉：</p>
+<pre class="racket"><code>((λ (f n)
+  (if (= n 0)
+      n
+      (+ n (f f (- n 1)))))
+ (λ (f n)
+  (if (= n 0)
+      n
+      (+ n (f f (- n 1)))))
+ 5)
+ ; 15</code></pre>
+<h2 id="y组合子定义">Y组合子定义</h2>
+<p>定义推导已经很多版本了<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>。这里直接给出定义：</p>
+<div class="两栏">
+<div class="列">
+<p>严格版：</p>
+<pre class="racket"><code>#lang racket/base
+
+(define (Y f)
+  (let ([g (λ (x) (x x))]
+        [h (λ (y) (f (λ (x) ((y y) x))))])
+    (g h)))
+
+(define sum
+  (Y (λ (f)
+       (λ (n)
+         (if (= n 0)
+             n
+             (+ n (f (- n 1))))))))
+(sum 5)
+; 15</code></pre>
+</div>
+<div class="列">
+<p>惰性版：</p>
+<pre class="racket"><code>#lang lazy
+
+(define Y (λ (f) ((λ (x) (f (x x))) (λ (x) (f (x x))))))
+
+(define sum
+  (Y (λ (f)
+       (λ (n)
+         (if (= n 0)
+             n
+             (+ n (f (- n 1))))))))
+
+(sum 10)
+; 10</code></pre>
+</div>
+</div>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a href="https://www.zhihu.com/question/21099081">Y不动点组合子用在哪里？</a></li>
+<li><a href="https://blog.csdn.net/pongba/article/details/1336028">康托尔、哥德尔、图灵——永恒的金色对角线(rev#2)</a></li>
+<li><a href="https://en.wikibooks.org/wiki/Haskell/Fix_and_recursion">Haskell/Fix and recursion</a></li>
+</ul>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p><a href="https://segmentfault.com/a/1190000008212076">Javascript 中 Y 组合子的推导 - 一隅 - SegmentFault 思否</a><a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+		</div>
+
+		<footer class="aono footer">
+			本程序由
+			<a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+			强力驱动！
+		</footer>
+	</main>
+</body>
+</html>
