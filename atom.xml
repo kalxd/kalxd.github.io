@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <title>我的网站</title>
+    <title>鄙野清舍</title>
     <link href="127.0.0.1/atom.xml" rel="self" />
     <link href="127.0.0.1" />
     <id>127.0.0.1/atom.xml</id>
     <author>
-        <name>我的网站</name>
+        <name>鄙野清舍</name>
         <email></email>
     </author>
     <updated>2020-11-26T00:00:00Z</updated>
@@ -28,7 +28,9 @@
 <body>
 	<main class="aono main container">
 		<header class="aono site header">
-			我的网站
+			鄙野清舍
+			
+			<small>“百无一用是读书”</small>
 			
 		</header>
 		<nav class="aono navi menu">
@@ -297,7 +299,9 @@
 <body>
 	<main class="aono main container">
 		<header class="aono site header">
-			我的网站
+			鄙野清舍
+			
+			<small>“百无一用是读书”</small>
 			
 		</header>
 		<nav class="aono navi menu">
@@ -460,7 +464,9 @@
 <body>
 	<main class="aono main container">
 		<header class="aono site header">
-			我的网站
+			鄙野清舍
+			
+			<small>“百无一用是读书”</small>
 			
 		</header>
 		<nav class="aono navi menu">
@@ -823,7 +829,9 @@
 <body>
 	<main class="aono main container">
 		<header class="aono site header">
-			我的网站
+			鄙野清舍
+			
+			<small>“百无一用是读书”</small>
 			
 		</header>
 		<nav class="aono navi menu">
@@ -1187,7 +1195,9 @@
 <body>
 	<main class="aono main container">
 		<header class="aono site header">
-			我的网站
+			鄙野清舍
+			
+			<small>“百无一用是读书”</small>
 			
 		</header>
 		<nav class="aono navi menu">
@@ -1486,7 +1496,9 @@ title: 中文书写简易说明
 <body>
 	<main class="aono main container">
 		<header class="aono site header">
-			我的网站
+			鄙野清舍
+			
+			<small>“百无一用是读书”</small>
 			
 		</header>
 		<nav class="aono navi menu">
@@ -1617,7 +1629,9 @@ title: 中文书写简易说明
 <body>
 	<main class="aono main container">
 		<header class="aono site header">
-			我的网站
+			鄙野清舍
+			
+			<small>“百无一用是读书”</small>
 			
 		</header>
 		<nav class="aono navi menu">
