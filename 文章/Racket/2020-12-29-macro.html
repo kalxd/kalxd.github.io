@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+	<meta charset="UTF-8">
+	<title>让Macro加速你的开发</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../../css/aono.css">
+	<link rel="stylesheet" href="../../css/code.css">
+	<link rel="shortcut icon" type="image/x-icon" href="../../image/favicon.ico">
+</head>
+<body>
+	<main class="aono main container">
+		<header class="aono site header">
+			鄙野清舍
+			
+			<small>“百无一用是读书”</small>
+			
+		</header>
+		<nav class="aono navi menu">
+			<ul>
+				<li class="item"><a href="../../index.html">首页</a></li>
+				<li class="item"><a href="../../猫.html">分类</a></li>
+				<li class="item"><a href="../../标签.html">标签</a></li>
+			</ul>
+
+			<a href="../../atom.xml" class="right item">订阅</a>
+		</nav>
+
+		<div class="aono segment">
+			<article class="aono article">
+    <section>
+		<header class="header">
+			<h1>
+				让Macro加速你的开发
+				<small class="post date">
+					-
+					<time datetime="2020-12-29">2020年12月29日</time>
+				</small>
+			</h1>
+		</header>
+		<header class="cat">
+			标签：<a href="../../%E6%A0%87%E7%AD%BE/%E5%AE%8F.html">宏</a>, <a href="../../%E6%A0%87%E7%AD%BE/%E7%A8%8B%E5%BA%8F%E8%AF%AD%E8%A8%80.html">程序语言</a>
+		</header>
+		<hr>
+        <h2 id="一次性定义多个函数">一次性定义多个函数</h2>
+<p>Racket的两个好用的库，一个是<a href="https://docs.racket-lang.org/guide/contracts.html">contract</a>和<a href="https://docs.racket-lang.org/reference/procedures.html?q=curry#%28def._%28%28lib._racket%2Ffunction..rkt%29._curry%29%29">curry</a>。不巧的是内部没有同时能使用它们的函数。 假设我们新写了一个只能接受一个正数的加法：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb1-1" title="1">(define/contract (my-add x y)</a>
+<a class="sourceLine" id="cb1-2" title="2">  (-&gt; <span class="kw">positive?</span> <span class="kw">positive?</span> <span class="kw">positive?</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3">  (<span class="op">+</span> x y))</a></code></pre></div>
+<p>让它柯里化：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb2-1" title="1">(<span class="ex">define</span><span class="fu"> curry/my-add </span>(curry my-add))</a></code></pre></div>
+<p>需要额外定义一次。这种涉及语法上的改造，无论语言如何动态（不提供元编程的动态），同样无法根治。此时正是宏大展神威的时刻。</p>
+<h3 id="definecurry宏">define/curry宏</h3>
+<p>我们选定义一个没什么作用的宏，性质同<code>define/contract</code>。</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb3-1" title="1">(<span class="ex">define-syntax</span><span class="fu"> </span>(define/curry stx)</a>
+<a class="sourceLine" id="cb3-2" title="2">  (syntax-case stx ()</a>
+<a class="sourceLine" id="cb3-3" title="3">    [(_ (name args ...) body ...)</a>
+<a class="sourceLine" id="cb3-4" title="4">     #'(define/contract (name args ...)</a>
+<a class="sourceLine" id="cb3-5" title="5">         body ...)]))</a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="co">;;; define/contract换成了define/curry，</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="co">;;; 目前为止它们作用相同。</span></a>
+<a class="sourceLine" id="cb3-9" title="9">(define/curry (my-add x y)</a>
+<a class="sourceLine" id="cb3-10" title="10">  (-&gt; <span class="kw">positive?</span> <span class="kw">positive?</span> <span class="kw">positive?</span>)</a>
+<a class="sourceLine" id="cb3-11" title="11">  (<span class="op">+</span> x y))</a></code></pre></div>
+<p>上面仅仅做到了定义了contract，但是柯里化还是没有，不要急，我们继速往下加。</p>
+<h3 id="definecurry补上柯里化">define/curry补上柯里化</h3>
+<p>我们把新的柯里化的函数名改为了<code>curry/add-my</code>，格式为<code>curry/&lt;函数名&gt;</code>。那么接下来也是如此改造。</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb4-1" title="1">(<span class="ex">define-syntax</span><span class="fu"> </span>(define/curry stx)</a>
+<a class="sourceLine" id="cb4-2" title="2">  (syntax-case stx ()</a>
+<a class="sourceLine" id="cb4-3" title="3">    [(_ (name args ...) body ...)</a>
+<a class="sourceLine" id="cb4-4" title="4">     (with-syntax ([curry-name (format-id #'name <span class="st">&quot;curry/~a&quot;</span> #'name)])</a>
+<a class="sourceLine" id="cb4-5" title="5">       #'(<span class="kw">begin</span></a>
+<a class="sourceLine" id="cb4-6" title="6">           (define/contract (name args ...)</a>
+<a class="sourceLine" id="cb4-7" title="7">             body ...)</a>
+<a class="sourceLine" id="cb4-8" title="8"></a>
+<a class="sourceLine" id="cb4-9" title="9">           (<span class="ex">define</span><span class="fu"> curry-name </span>(curry name))))]))</a></code></pre></div>
+<h3 id="测试">测试</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb5-1" title="1">main.rkt&gt; ((curry/my-add <span class="dv">1</span>) <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="dv">11</span></a>
+<a class="sourceLine" id="cb5-3" title="3">main.rkt&gt; (curry/my-add <span class="dv">-1</span> <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb5-4" title="4">exception raised by error <span class="kw">display</span> handler: build-path: absolute path cannot be added to a base path</a>
+<a class="sourceLine" id="cb5-5" title="5">  absolute path: \msys64\home\XGLey\Code\Racket\sample\main.rkt</a>
+<a class="sourceLine" id="cb5-6" title="6">  base path: d:\msys64\home\XGLey\Code\R...<span class="co">; original exception raised: my-add: contract violation</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  expected: <span class="kw">positive?</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  given: <span class="dv">-1</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  in: the 1st argument of</a>
+<a class="sourceLine" id="cb5-10" title="10">      (-&gt; <span class="kw">positive?</span> <span class="kw">positive?</span> <span class="kw">positive?</span>)</a>
+<a class="sourceLine" id="cb5-11" title="11">  contract from: (function my-add)</a>
+<a class="sourceLine" id="cb5-12" title="12">  blaming: d:\msys64\home\XGLey\Code\Racket\sample\main.rkt</a>
+<a class="sourceLine" id="cb5-13" title="13">   (assuming the contract is correct)</a>
+<a class="sourceLine" id="cb5-14" title="14">  at: d:\msys64\home\XGLey\Code\Racket\sample\main.rkt:<span class="fl">15.15</span></a></code></pre></div>
+<p>从结果看，既满足了柯里化，同时也带有contract信息，看来<code>define/curry</code>如期行事了呢。</p>
+<h2 id="改造struct">改造struct</h2>
+<p>写过javascript都知道，从一个地方获取了一个json，一般要不假思索就拿来当成object使用。有时字段不符合，又要一个一个转换，十分废键盘；如果使用的是<code>class</code>设计模式，更是痛不欲生。</p>
+<p>Racket也提供类似自定义结构的<code>struct</code>，json在racket中也着应几个常用数据结构，例如<code>hash?</code>，接近javascript的object。那么有没有什么办法让struct与json之间相互转化呢？答案是肯定有办法的，同样比较废键盘。无法通过常现手段实现的方法，最后只能使用宏了。</p>
+<h3 id="实现一个空宏hashstruct">实现一个空宏：hash/struct</h3>
+<p>我们要做的仅仅是扩展struct，旧有的struct功能我们最好不能舍弃。先写一个没多大作用的宏：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb6-1" title="1">(<span class="ex">define-syntax</span><span class="fu"> </span>(hash/struct stx)</a>
+<a class="sourceLine" id="cb6-2" title="2">  (syntax-case stx ()</a>
+<a class="sourceLine" id="cb6-3" title="3">    [(_ name props keyword ...)</a>
+<a class="sourceLine" id="cb6-4" title="4">     #'(struct name props</a>
+<a class="sourceLine" id="cb6-5" title="5">         keyword ...)]))</a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7">main.rkt&gt; (hash/struct user [id name])</a>
+<a class="sourceLine" id="cb6-8" title="8">main.rkt&gt; user?</a>
+<a class="sourceLine" id="cb6-9" title="9">#&lt;procedure:user?&gt;</a>
+<a class="sourceLine" id="cb6-10" title="10">main.rkt&gt; (hash/struct user [id name] #:transparent)</a></code></pre></div>
+<p>连<em>关键词</em>都不在话下。</p>
+<h3 id="匹配对应字段">匹配对应字段</h3>
+<p>单独这么一个struct不大够用，有时字段并不是一一对应，那么当我们设计下面这样一个struct时，它能找到json对应的字段，生成自己。</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb7-1" title="1">(hash/struct user ([id id] [name account]))</a></code></pre></div>
+<p>如此，我们需要在生成代码前，找出一个struct需要属性，一个json需要的属性：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb8-1" title="1"><span class="co">;;; 批量从hash中找出对应的值。</span></a>
+<a class="sourceLine" id="cb8-2" title="2">(define/contract (hash-pick h keys)</a>
+<a class="sourceLine" id="cb8-3" title="3">  (-&gt; hash? (listof any/c) (listof any/c))</a>
+<a class="sourceLine" id="cb8-4" title="4">  (for/list ([k keys])</a>
+<a class="sourceLine" id="cb8-5" title="5">    (hash-ref h k)))</a>
+<a class="sourceLine" id="cb8-6" title="6"></a>
+<a class="sourceLine" id="cb8-7" title="7">(<span class="ex">define-syntax</span><span class="fu"> </span>(hash/struct stx)</a>
+<a class="sourceLine" id="cb8-8" title="8">  (syntax-case stx ()</a>
+<a class="sourceLine" id="cb8-9" title="9">    [(_ name fields keyword ...)</a>
+<a class="sourceLine" id="cb8-10" title="10">     (<span class="kw">let*</span> ([all-fields (syntax-&gt;datum #'fields)]</a>
+<a class="sourceLine" id="cb8-11" title="11">            [key-fields (for/list ([f (in-list all-fields)])</a>
+<a class="sourceLine" id="cb8-12" title="12">                          (format-id #'fields <span class="st">&quot;~a&quot;</span> (<span class="kw">car</span> f)))]</a>
+<a class="sourceLine" id="cb8-13" title="13">            [sym-fields (for/list ([s (in-list all-fields)])</a>
+<a class="sourceLine" id="cb8-14" title="14">                          (format-id #'fields <span class="st">&quot;~a&quot;</span> (<span class="kw">cadr</span> s)))])</a>
+<a class="sourceLine" id="cb8-15" title="15">       (with-syntax ([key-fields key-fields]</a>
+<a class="sourceLine" id="cb8-16" title="16">                     [sym-fields sym-fields]</a>
+<a class="sourceLine" id="cb8-17" title="17">                     [struct-&gt;hash (format-id #'name <span class="st">&quot;~a-&gt;hash&quot;</span> #'name)]</a>
+<a class="sourceLine" id="cb8-18" title="18">                     [hash-&gt;struct (format-id #'name <span class="st">&quot;hash-&gt;~a&quot;</span> #'name)]</a>
+<a class="sourceLine" id="cb8-19" title="19">                     [struct-contract? (format-id #'name <span class="st">&quot;~a?&quot;</span> #'name)])</a>
+<a class="sourceLine" id="cb8-20" title="20">         #'(<span class="kw">begin</span></a>
+<a class="sourceLine" id="cb8-21" title="21">             (struct name key-fields</a>
+<a class="sourceLine" id="cb8-22" title="22">               keyword ...)</a>
+<a class="sourceLine" id="cb8-23" title="23"></a>
+<a class="sourceLine" id="cb8-24" title="24">             (define/contract (hash-&gt;struct input)</a>
+<a class="sourceLine" id="cb8-25" title="25">               (-&gt; hash? struct-contract?)</a>
+<a class="sourceLine" id="cb8-26" title="26">               (<span class="kw">let</span> ([v (hash-pick input 'sym-fields)])</a>
+<a class="sourceLine" id="cb8-27" title="27">                 (apply name v)))</a>
+<a class="sourceLine" id="cb8-28" title="28"></a>
+<a class="sourceLine" id="cb8-29" title="29">             (define/contract (struct-&gt;hash  x)</a>
+<a class="sourceLine" id="cb8-30" title="30">               (-&gt; struct-contract? hash?)</a>
+<a class="sourceLine" id="cb8-31" title="31">               (<span class="kw">let*</span> ([v (struct-&gt;list x)]</a>
+<a class="sourceLine" id="cb8-32" title="32">                      [p (map <span class="kw">list</span> 'sym-fields v)])</a>
+<a class="sourceLine" id="cb8-33" title="33">                 (make-hash p))))))]))</a></code></pre></div>
+<p>这个实现很长，但它所做的事并不多。 我们以上面的<code>user</code>为例子， 在<code>let*</code>语句中，unzip了<code>'([id id] [name account])</code>，得到两条列表，前一条列表喂给racket的struct；后一条列保留下来，日后做数据转换时，它从json中找出对应值，用以生成对应的struct。 在<code>with-syntax</code>语句中，定义几个函数名，一个是<code>user-&gt;hash</code>——从user这个struct转成hash；加一个是<code>hash-&gt;user</code>——上一个的反操作，从hash转成user。</p>
+<h2 id="总结">总结</h2>
+<p>我们可以看到Racket宏的强力，在普通代码无法正常实现时，它可以操作语法形式，简化我们的开发。不得不说是个得力帮手，希望能大力推广元编程（同时看了眼Ruby）。</p>
+    </section>
+</article>
+
+		</div>
+
+		<footer class="aono footer">
+			本程序由
+			<a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+			强力驱动！
+		</footer>
+	</main>
+</body>
+</html>
