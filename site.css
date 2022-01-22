@@ -5,10 +5,17 @@
 	--藏青: #2E4E7E;
 	--群青: #4C8DAE;
 	--漆黑: #161823;
+	--姜黄: #FFC773;
+	--樱草色: #EAFF56;
+	--苍白: #d1d9e0;
+}
+
+html {
+	overflow: hidden;
 }
 
 body {
-	background-color: var(--水色);
+	background-color: var(--樱草色);
 }
 
 .scrolling > .text {
@@ -18,8 +25,9 @@ body {
 	transition: right, color;
 
 	animation-name: 横幅滚动;
-	animation-duration: 60s;
+	animation-duration: 10s;
 	animation-iteration-count: infinite;
+	animation-timing-function: linear;
 }
 
 @keyframes 横幅滚动 {
@@ -49,29 +57,19 @@ body {
 }
 
 .title {
-	color: var(--群青);
+	color: var(--水色);
 	opacity: 1;
-	text-align: center;
 	text-shadow: 2px 2px var(--漆黑);
 
 	animation-name: 闪动;
 	animation-duration: 1s;
 	animation-iteration-count: infinite;
-}
-
-@keyframes 闪动 {
-	from {
-		opacity: 1;
-	}
-
-	to {
-		opacity: 0;
-	}
+	animation-timing-function: linear;
 }
 
 .main.layout {
 	margin: 1rem auto;
-	width: 80%;
+	display: flex;
 }
 
 .menu {
@@ -84,6 +82,7 @@ body {
 .menu > .item {
 	background-color: var(--绿沈);
 	padding: 1rem .5rem;
+	border: 4px outset var(--苍白);
 }
 
 .menu > .item:hover {
