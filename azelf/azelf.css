@@ -1,0 +1,65 @@
+:root {
+	--靛青: #177cb0;
+	--精白: #ffffff;
+}
+
+body {
+	margin: 0;
+}
+
+.ui.container {
+	display: grid;
+}
+
+.ui.header {
+	background-color: var(--靛青);
+	color: var(--精白);
+	grid-row-start: 1;
+	grid-row-end: 2;
+
+	grid-column-start: 1;
+	grid-column-end: 2;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ui.content {
+	grid-row-start: 2;
+	grid-row-end: 3;
+
+	display: grid;
+	grid-template-columns: 10rem auto;
+
+	width: 80%;
+	margin: 4rem auto;
+}
+
+.ui.sidebar {
+	grid-row-start: 1;
+	grid-row-end: 2;
+	grid-column-start: 1;
+	grid-column-end: 2;
+
+	border-right: 1px solid var(--靛青);
+}
+
+.ui.segment {
+	grid-row-start: 1;
+	grid-row-end: 2;
+	grid-column-start: 2;
+	grid-column-end: 3;
+	padding-left: 4rem;
+}
+
+.ui.footer {
+	grid-row-start: 3;
+	grid-row-end: 4;
+	grid-column-start: 1;
+	grid-column-end: 2;
+	text-align: center;
+
+	color: var(--精白);
+	background-color: var(--靛青);
+}
