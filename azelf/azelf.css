@@ -25,32 +25,24 @@ body {
 	justify-content: center;
 }
 
+.ui.header .level3 {
+	font-size: 1.3em;
+}
+
+.ui.header .level2 {
+	font-size: 1.2em;
+}
+
+.ui.header .level1 {
+	font-size: 1.1em;
+}
+
 .ui.content {
 	grid-row-start: 2;
 	grid-row-end: 3;
 
-	display: grid;
-	grid-template-columns: 10rem auto;
-
 	width: 80%;
 	margin: 4rem auto;
-}
-
-.ui.sidebar {
-	grid-row-start: 1;
-	grid-row-end: 2;
-	grid-column-start: 1;
-	grid-column-end: 2;
-
-	border-right: 1px solid var(--靛青);
-}
-
-.ui.segment {
-	grid-row-start: 1;
-	grid-row-end: 2;
-	grid-column-start: 2;
-	grid-column-end: 3;
-	padding-left: 4rem;
 }
 
 .ui.footer {
@@ -62,4 +54,10 @@ body {
 
 	color: var(--精白);
 	background-color: var(--靛青);
+	padding-top: 2rem;
+	padding-bottom: 2rem;
+}
+
+.ui.footer a {
+	color: var(--精白);
 }

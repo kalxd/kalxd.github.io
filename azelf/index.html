@@ -8,53 +8,32 @@
 	<body>
 		<main class="ui container">
 			<header class="ui header">
-				<img class="logo" src="./azelf.png">
-				<h1 class="title">azelf</h1>
+				<h1 class="title">
+					<span class="level3">(</span><span class="level2">(</span><span class="level1">(</span>
+					azelf
+					<span class="level1">)</span><span class="level2">)</span><span class="level3">)</span>
+				</h1>
 			</header>
 
 			<div class="ui content">
-				<nav class="ui sidebar">
-					<ul>
-						<li><a href="#install">安装</a></li>
-						<li><a href="#tutorial">上手</a></li>
-						<li><a href="#update">更新</a></li>
-					</ul>
-				</nav>
-
-				<article class="ui segment">
-					<section class="ui section">
-						<h2 id="install">安装</h2>
-						<p>
-							使用命令：
-							<br>
-							<codeblock>
-								$ raco pkg install azelf
-							</codeblock>
-						</p>
-					</section>
-
-					<section class="ui section">
-						<h2 id="tutorial">上手使用</h2>
-						<p>
-							先这样，再那样。
-						</p>
-					</section>
-
-					<section class="ui section">
-						<h2 id="update">更新</h2>
-						<p>
-							执行命令：
-							<br>
-							<codeblock>
-								$ raco pkg update azelf
-							</codeblock>
-						</p>
-					</section>
-				</article>
+				<p>
+					azelf是一门纯函数Racket方言，延续了racket/base基础的动态语言。
+					整体主倾向于Haskell，大部分函数都是柯里化函数。
+				</p>
+				<p>
+					它有以下特色：
+					<ol>
+						<li>柯里化</li>
+						<li>数据不可变</li>
+						<li>接口一致性</li>
+						<li>提供丰富接口</li>
+					</ol>
+				</p>
 			</div>
 
 			<footer class="ui footer">
-				footer
+				<a href="https://github.com/kalxd/azelf">azelf源码</a>
+				<a href="https://docs.racket-lang.org/azelf/index.html">azelf文档</a>
 			</footer>
 		</main>
 	</body>
